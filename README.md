@@ -1,0 +1,1 @@
+# lambda-media-resize-bucket
