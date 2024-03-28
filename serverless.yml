@@ -1,0 +1,43 @@
+service: builderpad-media-converter
+
+frameworkVersion: "3"
+
+custom:
+  inputBucket: ${env:INPUT_BUCKET, 'cwecwecwc'}
+  outputBucket: ${env:OUTPUT_BUCKET, 'wecwecwecwec'}
+  region: ${env:APP_AWS_REGION, 'us-east-1'}
+  stage: ${env:STAGE, 'dev'}
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  stage: ${self:custom.stage}
+  region: ${self:custom.region}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - mediaconvert:CreateJob
+      Resource:
+        - Fn::Join:
+            - ''
+            - - 'arn:aws:s3:::'
+              - ${self:custom.inputBucket}
+              - '/*'
+
+functions:
+  video-compression:
+    handler: ./src/video-compression/handler.compress
+    timeout: 900
+    environment:
+      INPUT_BUCKET: ${self:custom.inputBucket}
+      OUTPUT_BUCKET: ${self:custom.outputBucket}
+    events:
+      - s3:
+          bucket: ${self:custom.inputBucket}
+          event: s3:ObjectCreated:*
+
+plugins:
+  - serverless-dotenv-plugin
+  - serverless-offline
+
